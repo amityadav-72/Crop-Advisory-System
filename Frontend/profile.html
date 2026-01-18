@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Smart Crop Advisory</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        
+        body { 
+            background-color: #f0f2f0; 
+            display: flex; 
+            flex-direction: column;
+            min-height: 100vh; 
+        }
+
+        /* Navigation Header */
+        header { 
+            width: 100%; height: 70px; background: #1b5e20; 
+            color: white; display: flex; justify-content: space-between; 
+            align-items: center; padding: 0 40px; 
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .profile-card {
+            background: white; width: 500px; padding: 40px;
+            border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute; top: 20px; left: 20px;
+            text-decoration: none; color: #1b5e20; font-weight: bold; font-size: 14px;
+        }
+
+        .profile-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 30px;
+            border-bottom: 2px solid #f0f2f0; padding-bottom: 20px;
+        }
+
+        .profile-pic {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 4px solid #4CAF50; object-fit: cover; background: #eee;
+        }
+
+        /* Input Fields with Green Borders */
+        .info-group { margin-bottom: 20px; }
+        .info-label {
+            display: block; font-size: 12px; color: #666;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
+        }
+
+        .info-input {
+            width: 100%;
+            font-size: 16px;
+            color: #333;
+            padding: 12px;
+            background: #f9f9f9;
+            border: 2px solid #4CAF50; /* Green Border */
+            border-radius: 8px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .info-input:focus {
+            background: #fff;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+        }
+
+        /* Green Buttons */
+        .btn-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        
+        .update-btn {
+            width: 100%; padding: 14px; background: #4CAF50;
+            color: white; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s;
+        }
+        .update-btn:hover { background: #388E3C; }
+
+        /* Black Footer */
+        footer {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>🌱 Smart Crop Advisory</h2>
+    <div style="display:flex; align-items:center; gap:15px;">
+        <span id="headerName" style="color:white; font-size:14px;"></span>
+        <button onclick="location.href='home_pg.html'" style="padding:8px 15px; border-radius:5px; border:none; cursor:pointer;">Home</button>
+    </div>
+</header>
+
+<div class="main-content">
+    <div class="profile-card">
+        <a href="home_pg.html" class="back-btn">← Back</a>
+        
+        <div class="profile-header">
+            <div class="title-section">
+                <h1 style="color: #1b5e20;">User Profile</h1>
+                <p style="color: #888; font-size: 14px;">Update your information below</p>
+            </div>
+            <img src="" id="displayPic" class="profile-pic" alt="Profile">
+        </div>
+
+        <div class="info-group">
+            <label class="info-label">Full Name</label>
+            <input type="text" id="editName" class="info-input">
+        </div>
+
+        <div class="info-group">
+            <label class="info-label">Email Address</label>
+            <input type="email" id="editEmail" class="info-input">
+        </div>
+
+        <div class="info-group">
+            <label class="info-label">Mobile Number</label>
+            <input type="text" id="editPhone" class="info-input">
+        </div>
+
+        <div class="btn-container">
+            <button class="update-btn" onclick="saveProfile()">Update Profile Information</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2026 Smart Crop Advisory System. All Rights Reserved.</p>
+</footer>
+
+<script>
+    const API_URL = "http://localhost:5000";
+
+    window.onload = function() {
+        const loggedIn = sessionStorage.getItem("loggedIn");
+        if (loggedIn !== "true") {
+            window.location.href = "home_pg.html";
+            return;
+        }
+
+        // Fill inputs with current session data
+        const name = sessionStorage.getItem("userName") || "";
+        const email = sessionStorage.getItem("userEmail") || "";
+        const phone = sessionStorage.getItem("userPhone") || "";
+
+        document.getElementById("headerName").innerText = "Hi, " + name;
+        document.getElementById("editName").value = name;
+        document.getElementById("editEmail").value = email;
+        document.getElementById("editPhone").value = phone;
+
+        // Set Profile Pic
+        updateAvatar(name);
+    };
+
+    function updateAvatar(name) {
+        document.getElementById("displayPic").src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1b5e20&color=fff&size=128`;
+    }
+
+    async function saveProfile() {
+        const updatedData = {
+            fullName: document.getElementById("editName").value,
+            email: document.getElementById("editEmail").value,
+            phone: document.getElementById("editPhone").value,
+            oldEmail: sessionStorage.getItem("userEmail") // Used to find the record in DB
+        };
+
+        try {
+            // Send update request to backend
+            const res = await fetch(`${API_URL}/update-profile`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(updatedData)
+            });
+
+            if (res.ok) {
+                // Update Session Storage
+                sessionStorage.setItem("userName", updatedData.fullName);
+                sessionStorage.setItem("userEmail", updatedData.email);
+                sessionStorage.setItem("userPhone", updatedData.phone);
+                
+                alert("Profile updated successfully!");
+                document.getElementById("headerName").innerText = "Hi, " + updatedData.fullName;
+                updateAvatar(updatedData.fullName);
+            } else {
+                alert("Failed to update profile. Please try again.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Server connection error.");
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgroSeed – Premium Crop Seeds</title>
+
+<style>
+:root{
+    --primary:#1b5e20;
+    --accent:#4CAF50;
+    --bg:#f4f7f4;
+    --card:#ffffff;
+    --text:#263238;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",Arial,sans-serif}
+body{background:var(--bg);color:var(--text)}
+
+/* NAVBAR */
+.navbar{
+    background:var(--primary);
+    padding:16px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:sticky;
+    top:0;
+    z-index:1000;
+}
+.navbar b{color:white;font-size:18px}
+
+.cart-btn{
+    background:var(--accent);
+    color:white;
+    padding:8px 20px;
+    border-radius:20px;
+    text-decoration:none;
+    font-weight:600;
+    position:relative;
+}
+.cart-count{
+    position:absolute;
+    top:-8px;right:-8px;
+    background:#ff5252;
+    color:white;
+    font-size:12px;
+    padding:3px 7px;
+    border-radius:50%;
+}
+
+/* HEADER & SEARCH */
+header{background:white;padding:40px 20px;text-align:center}
+header h1{color:var(--primary)}
+header p{color:#607d8b;margin-top:8px}
+
+.search-container {
+    padding: 20px;
+    text-align: center;
+    background: white;
+    border-bottom: 1px solid #ddd;
+}
+#cropSearch {
+    width: 50%;
+    padding: 12px 25px;
+    border-radius: 30px;
+    border: 2px solid var(--accent);
+    outline: none;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+#cropSearch:focus {
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+    border-color: #ff5252;
+}
+
+/* GRID LAYOUT - 4 COLUMNS */
+.container{
+    max-width:1300px;
+    margin:20px auto;
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap:25px;
+    padding:20px;
+}
+
+/* SEED CARD STYLING */
+.seed-card{
+    background: var(--card);
+    border-radius: 20px;
+    border: 1px solid #e0e0e0; /* Clean defined border */
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.seed-card:hover{
+    transform: translateY(-10px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    border-color: var(--accent);
+}
+
+.seed-image{height:200px; overflow: hidden;}
+.product-img{width:100%;height:100%;object-fit:cover; transition: 0.5s;}
+.seed-card:hover .product-img { transform: scale(1.1); }
+
+/* PREMIUM HOVER INFO */
+.hover-info {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 200px; 
+    background: rgba(27, 94, 32, 0.92); /* Proper opacity */
+    color: white;
+    padding: 25px;
+    opacity: 0;
+    transition: all 0.4s ease;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 5;
+    backdrop-filter: blur(4px); /* Glassmorphism effect */
+}
+
+.seed-card:hover .hover-info {
+    opacity: 0.80;
+}
+
+.hover-info p { 
+    margin: 6px 0; 
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 4px;
+}
+
+.hover-info strong { 
+    color: #FFD700; 
+    display: inline-block; 
+    width: 85px; 
+    text-transform: uppercase;
+    font-size: 0.7rem;
+}
+
+/* CARD CONTENT */
+.card-content{padding:20px; text-align:center; flex-grow: 1;}
+.price{font-weight:700; color:var(--primary); margin:10px 0; font-size: 1.2rem;}
+.buy-btn{
+    background:var(--accent);
+    color:white; border:none;
+    padding:12px;
+    border-radius:25px;
+    cursor:pointer;
+    font-weight:600;
+    width: 100%;
+    transition: 0.3s;
+}
+.buy-btn:hover { background: var(--primary); }
+
+/* MODAL & TOAST */
+#qty-modal{
+    display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:white; padding:50px; border-radius:18px; z-index:2000; text-align:center;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+}
+.blur-bg{filter:blur(8px); pointer-events:none}
+.toast{
+    position:fixed; bottom:30px; right:30px; background:var(--primary);
+    color:white; padding:15px 25px; border-radius:30px; display:none; z-index:3000;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <b>AGRO-SEED CO.</b>
+    <a href="cart.html" class="cart-btn">
+        🛒 Your Cart
+        <span class="cart-count" id="cartCount">0</span>
+    </a>
+</nav>
+
+<div id="page-content">
+    <header>
+        <h1>High-Yield Crop Seeds</h1>
+        <p>Premium quality seeds for Indian farmers</p>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="cropSearch" placeholder="🔍 Search for seeds (e.g. Wheat, Rice, Tomato)..." onkeyup="filterCrops()">
+    </div>
+
+    <div class="container" id="cropGrid">
+        <script>
+        const products=[
+            ["Golden Wheat", 25, "https://5.imimg.com/data5/SELLER/Default/2023/6/313683367/DD/CN/RK/157998733/golden-wheat-grain.webp", "Mahyco Seeds", "95%", "98%", "120 Days"],
+            ["Sweet Corn Hybrid", 18.5, "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcR1ob4Be896oCUCj2mUl2MS6lbJXyxcO8V-517SnnA0s2tTSki4", "Nuziveedu Seeds", "90%", "99%", "85 Days"],
+            ["Giant Sunflower", 30, "https://img.freepik.com/free-photo/beautiful-sunflowers-outdoors-still-life_23-2150152757.jpg", "Advanta India", "85%", "97%", "100 Days"],
+            ["Ruby Tomato", 12.99, "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSJa6G2sFzRt2c_4DljZUMKfK8sMOFV-E8F_A&s", "Namdhari Seeds", "92%", "98%", "70 Days"],
+            ["Soybean", 45, "https://goqii.com/blog/wp-content/uploads/shutterstock_1467898517-1024x682.jpg", "JK Seeds", "85%", "98%", "110 Days"],
+            ["Green Spinach", 10, "https://static.toiimg.com/thumb/msid-126401396,width-1070,height-580,imgsize-342746,resizemode-75/photo.jpg", "Syngenta India", "90%", "99%", "45 Days"],
+            ["Premium Jowar", 35, "https://www.jiomart.com/images/product/original/rvjkpxg2uu/farmbean-whole-yellow-jowar-grains-7-kg-sorghum-jonna-for-weight-loss-native-low-gi-millet-rice-high-protein-100-more-fibre-than-rice-7000g-product-images-orvjkpxg2uu-p594632753-3-202211151935.jpg", "Kaveri Seeds", "85%", "98%", "115 Days"],
+            ["Hybrid Bajra", 28, "https://m.media-amazon.com/images/I/51sqsvZ9pfL._AC_UF1000,1000_QL80_.jpg", "Pioneer Seeds", "85%", "98%", "80 Days"],
+            ["Red Gram (Tur)", 65, "https://www.worldmartexport.com/media/seller/products/Red_Gram_APNc0dz.jpeg", "Rasi Seeds", "85%", "98%", "160 Days"],
+            ["Gram (Chickpeas)", 55, "https://4.imimg.com/data4/IG/II/MY-27845820/bengal-gram-whole-500x500.jpg", "National Seeds Corp", "90%", "98%", "110 Days"],
+            ["Basmati Rice", 80, "https://5.imimg.com/data5/PJ/FW/MY-27318931/fresh-basmati-rice-500x500.jpeg", "Daawat India", "95%", "99%", "135 Days"]
+        ];
+
+        function renderProducts(data) {
+            const grid = document.getElementById("cropGrid");
+            grid.innerHTML = data.map(p=>`
+            <div class="seed-card">
+                <div class="hover-info">
+                    <p><strong>Brand:</strong> ${p[3]}</p>
+                    <p><strong>Success:</strong> ${p[4]}</p>
+                    <p><strong>Purity:</strong> ${p[5]}</p>
+                    <p><strong>Maturity:</strong> ${p[6]}</p>
+                </div>
+                <div class="seed-image">
+                    <img src="${p[2]}" class="product-img">
+                </div>
+                <div class="card-content">
+                    <h3>${p[0]}</h3>
+                    <p class="price">₹${p[1].toFixed(2)}</p>
+                    <button class="buy-btn" onclick="askQuantity('${p[0]}',${p[1]},'${p[2]}')">Add to Cart</button>
+                </div>
+            </div>
+            `).join("");
+        }
+
+        renderProducts(products);
+
+        function filterCrops() {
+            let val = document.getElementById("cropSearch").value.toLowerCase();
+            let filtered = products.filter(p => p[0].toLowerCase().includes(val));
+            renderProducts(filtered);
+        }
+        </script>
+    </div>
+</div>
+
+<div id="qty-modal">
+    <h2 id="modal-name"></h2>
+    <p>Enter Quantity (kg/packet)</p>
+    <br>
+    <input type="number" id="qty-val" value="1" min="1"><br><br>
+    <button class="buy-btn" onclick="confirmAddToCart()" height="56px">Confirm</button><br>
+    <button class="buy-btn" style="background:#ccc;color:#333" onclick="closeModal()">Cancel</button>
+</div>
+
+<div class="toast" id="toast">✅ Added to cart</div>
+
+<script>
+let tempItem=null;
+
+function askQuantity(name,price,img){
+    tempItem={name,price,img};
+    document.getElementById("modal-name").innerText=name;
+    document.getElementById("qty-val").value=1;
+    document.getElementById("qty-modal").style.display="block";
+    document.getElementById("page-content").classList.add("blur-bg");
+}
+
+function closeModal(){
+    document.getElementById("qty-modal").style.display="none";
+    document.getElementById("page-content").classList.remove("blur-bg");
+}
+
+function confirmAddToCart(){
+    let q=parseInt(document.getElementById("qty-val").value);
+    if(isNaN(q) || q < 1) return;
+    let cart=JSON.parse(localStorage.getItem("agroCart"))||[];
+    let found=cart.find(i=>i.name===tempItem.name);
+    if(found){found.qty+=q}else{cart.push({...tempItem,qty:q})}
+    localStorage.setItem("agroCart",JSON.stringify(cart));
+    updateCartCount();
+    closeModal();
+    showToast();
+}
+
+function updateCartCount(){
+    let cart=JSON.parse(localStorage.getItem("agroCart"))||[];
+    document.getElementById("cartCount").innerText=cart.reduce((s,i)=>s+i.qty,0);
+}
+
+function showToast(){
+    let t=document.getElementById("toast");
+    t.style.display="block";
+    setTimeout(()=>t.style.display="none",2000);
+}
+updateCartCount();
+</script>
+
+<footer style="background:#1e1f1e; border-top:1px solid #7c7b7b; padding:50px 150px; font-size:13px; color:#8a8a8a; margin-top:40px;">
+    <div style="max-width:1100px; margin:auto; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+        <div><strong>© 2026</strong><br>All rights reserved</div>
+    </div>
+</footer>
+
+</body>
+</html>

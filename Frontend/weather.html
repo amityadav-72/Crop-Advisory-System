@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weather Advisory</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    font-family:Arial, sans-serif;
+    margin:0;
+    background:#f2f6f2;
+}
+
+header{
+    background:#1b5e20;
+    color:white;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+header a{
+    color:white;
+    text-decoration:none;
+}
+
+/* MAIN */
+.main{
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.box{
+    background:white;
+    padding:30px;
+    border-radius:18px;
+    box-shadow:0 15px 30px rgba(0,0,0,.12);
+}
+
+h2{
+    color:#2e7d32;
+    margin-bottom:5px;
+}
+
+/* INPUT */
+.controls{
+    display:flex;
+    gap:10px;
+    margin:15px 0;
+    flex-wrap:wrap;
+}
+
+input,button{
+    padding:12px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+
+button{
+    background:#4CAF50;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+/* GRID CARDS */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+    margin-top:25px;
+}
+
+.card{
+    background:#e8f5e9;
+    padding:18px;
+    border-radius:14px;
+    text-align:center;
+    box-shadow:0 6px 12px rgba(0,0,0,.1);
+}
+
+.card h4{
+    margin-bottom:8px;
+    color:#2e7d32;
+}
+
+/* GRAPH */
+.chart-box{
+    margin-top:30px;
+    background:#ffffff;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 10px 20px rgba(0,0,0,.1);
+}
+
+/* INFO */
+.note{
+    margin-top:20px;
+    background:#fff8e1;
+    padding:15px;
+    border-radius:12px;
+    color:#6d4c41;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>🌦️ Weather Advisory</h2>
+    <a href="index.html">⬅ Back</a>
+</header>
+
+<div class="main">
+<div class="box">
+
+<h2>7-Day Weather Forecast</h2>
+<p>Enter city name to view weather in visual format</p>
+
+<div class="controls">
+    <input type="text" id="city" placeholder="Enter city (e.g. Nagpur)">
+    <button onclick="getWeather()">Get Weather</button>
+</div>
+
+<!-- WEATHER CARDS -->
+<div id="forecast" class="grid"></div>
+
+<!-- GRAPH -->
+<div class="chart-box">
+    <canvas id="weatherChart"></canvas>
+</div>
+
+<div class="note">
+🌱 <b>Farmer Tip:</b> Use temperature & rainfall trends to plan irrigation, fertilizer application and crop protection.
+</div>
+
+</div>
+</div>
+
+<script>
+let chart;
+
+// OPEN-METEO API
+async function getWeather(){
+    const city = document.getElementById("city").value;
+    if(!city){ alert("Enter city name"); return; }
+
+    // GEO LOCATION
+    const geo = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`
+    ).then(res => res.json());
+
+    if(!geo.results){
+        alert("City not found");
+        return;
+    }
+
+    const { latitude, longitude } = geo.results[0];
+
+    const weather = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia/Kolkata`
+    ).then(res => res.json());
+
+    showCards(weather.daily);
+    showGraph(weather.daily);
+}
+
+// CARDS VIEW
+function showCards(data){
+    const box = document.getElementById("forecast");
+    box.innerHTML = "";
+
+    for(let i=0;i<data.time.length;i++){
+        box.innerHTML += `
+        <div class="card">
+            <h4>${data.time[i]}</h4>
+            <p>🌡️ Max: <b>${data.temperature_2m_max[i]}°C</b></p>
+            <p>🌡️ Min: <b>${data.temperature_2m_min[i]}°C</b></p>
+            <p>🌧️ Rain: <b>${data.precipitation_sum[i]} mm</b></p>
+        </div>
+        `;
+    }
+}
+
+// GRAPH VIEW
+function showGraph(data){
+    const ctx = document.getElementById("weatherChart").getContext("2d");
+
+    if(chart) chart.destroy();
+
+    chart = new Chart(ctx,{
+        type:'line',
+        data:{
+            labels:data.time,
+            datasets:[
+                {
+                    label:'Max Temp (°C)',
+                    data:data.temperature_2m_max,
+                    borderWidth:2,
+                    tension:0.4
+                },
+                {
+                    label:'Min Temp (°C)',
+                    data:data.temperature_2m_min,
+                    borderWidth:2,
+                    tension:0.4
+                },
+                {
+                    label:'Rainfall (mm)',
+                    data:data.precipitation_sum,
+                    borderWidth:2,
+                    tension:0.4
+                }
+            ]
+        },
+        options:{
+            responsive:true,
+            plugins:{
+                legend:{position:'top'}
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>

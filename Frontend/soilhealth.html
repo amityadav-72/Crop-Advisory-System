@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Soil Health Analysis (Gemini AI)</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:#f3f6f3;
+  margin:0;
+}
+
+/* HEADER */
+header{
+  background:#1b5e20;
+  color:white;
+  padding:18px 40px;
+  position:relative;
+}
+header h2{
+  margin:0;
+  text-align:center;
+  font-weight:600;
+}
+
+/* BACK BUTTON */
+.back-btn{
+  position:absolute;
+  left:20px;
+  top:50%;
+  transform:translateY(-50%);
+  color:white;
+  text-decoration:none;
+  font-size:14px;
+}
+
+/* MAIN CARD */
+.main{
+  max-width:1100px;
+  margin:40px auto;
+  background:white;
+  padding:40px;
+  border-radius:18px;
+  box-shadow:0 18px 35px rgba(0,0,0,.12);
+  display:flex;
+  justify-content:center;
+}
+
+/* PANEL */
+.panel{
+  width:540px;
+  border:2px dashed #4CAF50;
+  border-radius:16px;
+  padding:30px;
+  text-align:center;
+}
+.panel h3{
+  margin-top:0;
+  color:#2e7d32;
+}
+
+/* MEDIA */
+video, canvas, img{
+  width:100%;
+  border-radius:12px;
+  margin-top:15px;
+}
+
+/* BUTTONS */
+.controls{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:20px;
+}
+button{
+  padding:12px 20px;
+  background:#4CAF50;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-size:14px;
+  cursor:pointer;
+}
+button:hover{background:#43a047}
+
+input[type=file]{display:none}
+
+/* REPORT */
+.report{
+  margin-top:25px;
+  background:#e8f5e9;
+  border-radius:14px;
+  padding:20px;
+  display:none;
+}
+.report h3{
+  margin-top:0;
+  color:#1b5e20;
+}
+.report pre{
+  white-space:pre-wrap;
+  font-family:inherit;
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  .panel{width:100%}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <a href="index.html" class="back-btn">⬅ Back</a>
+  <h2>🌱 Soil Health Analysis (Gemini AI)</h2>
+</header>
+
+<div class="main">
+
+  <div class="panel">
+    <h3>📸 Capture or Upload Soil Image</h3>
+
+    <video id="video" autoplay></video>
+    <canvas id="canvas" style="display:none"></canvas>
+    <img id="preview" style="display:none"/>
+
+    <input type="file" id="uploadInput" accept="image/*">
+
+    <div class="controls">
+      <button type="button" onclick="startCamera()">Open Camera</button>
+      <button type="button" onclick="document.getElementById('uploadInput').click()">Upload Image</button>
+      <button type="button" onclick="analyze()">Analyze</button>
+    </div>
+
+    <div class="report" id="report">
+      <h3>🧠 AI Soil Health Report</h3>
+      <pre id="resultText">Analyzing soil using Gemini AI...</pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let video=document.getElementById("video");
+let canvas=document.getElementById("canvas");
+let ctx=canvas.getContext("2d");
+let preview=document.getElementById("preview");
+let uploadInput=document.getElementById("uploadInput");
+let report=document.getElementById("report");
+let resultText=document.getElementById("resultText");
+let imageBlob=null;
+
+/* CAMERA */
+function startCamera(){
+  navigator.mediaDevices.getUserMedia({video:true})
+    .then(s=>{
+      video.srcObject=s;
+      video.style.display="block";
+      canvas.style.display="none";
+      preview.style.display="none";
+    })
+    .catch(()=>alert("Camera access denied"));
+}
+
+/* UPLOAD */
+uploadInput.addEventListener("change",()=>{
+  const file=uploadInput.files[0];
+  if(!file) return;
+
+  imageBlob=file;
+  preview.src=URL.createObjectURL(file);
+  preview.style.display="block";
+  video.style.display="none";
+  canvas.style.display="none";
+});
+
+/* ANALYZE */
+function analyze(){
+  if(video.srcObject){
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+    canvas.toBlob(blob=>{
+      imageBlob=blob;
+      sendToBackend();
+    },"image/jpeg");
+  }else if(imageBlob){
+    sendToBackend();
+  }else{
+    alert("Please capture or upload an image");
+  }
+}
+
+/* SEND TO GEMINI */
+async function sendToBackend(){
+  report.style.display="block";
+  resultText.textContent="⏳ Analyzing soil using Gemini AI...";
+
+  const formData=new FormData();
+  formData.append("soilImage",imageBlob,"soil.jpg");
+
+  try{
+    const res=await fetch("http://localhost:5000/api/soil/analyze-soil",{
+      method:"POST",
+      body:formData
+    });
+    const data=await res.json();
+    resultText.textContent=data.report;
+  }catch{
+    resultText.textContent="❌ Failed to analyze soil image";
+  }
+}
+</script>
+
+</body>
+</html>

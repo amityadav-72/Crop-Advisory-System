@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Crop Advisory System</title>
+    <style>
+        *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+        header{ position:fixed; top:0; width:100%; height:70px; background:#1b5e20; color:white; display:flex; justify-content:space-between; align-items:center; padding:0 40px; z-index:1000; }
+        header button{ padding:8px 18px; background:#4CAF50; border:none; color:white; border-radius:6px; cursor:pointer; }
+        .page{ padding-top:70px; }
+        .hero{ height:80vh; background:url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center/cover no-repeat; display:flex; justify-content:center; align-items:center; color:white; text-align:center; }
+        .hero div{ background:rgba(0,0,0,.45); padding:40px; border-radius:14px; }
+        section{ padding:60px; text-align:center; }
+        .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:25px; max-width:1100px; margin:auto; }
+        .card{ background:#f4f7f4; border-radius:16px; overflow:hidden; box-shadow:0 10px 20px rgba(0,0,0,.15); cursor:pointer; transition:.3s; }
+        .card:hover{ transform:translateY(-5px); }
+        .card img{ width:100%; height:170px; object-fit:cover; }
+        .card p{ padding:16px; font-weight:bold; color:#2e7d32; }
+        .modal{ position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; justify-content:center; align-items:center; z-index:2000; }
+        .modal.active{ display:flex; }
+        .login-box{ background:white; padding:30px; width:340px; border-radius:14px; text-align:center; }
+        .login-box input{ width:100%; padding:12px; margin:10px 0; border-radius:6px; border:1px solid #ccc; }
+        .login-box button{ width:100%; padding:12px; background:#4CAF50; color:white; border:none; border-radius:6px; cursor:pointer; }
+        .message{ position:fixed; top:90px; right:40px; background:#ffebee; color:#c62828; padding:14px 18px; border-radius:8px; display:none; z-index:3000; }
+        .profile-container{ position:relative; display:flex; align-items:center; gap:15px; }
+        .profile-btn{ width:45px; height:45px; border-radius:50%; background:white; border:none; cursor:pointer; font-size:24px; }
+        .profile-dropdown{ position:absolute; top:60px; right:0; background:white; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); min-width:180px; display:none; overflow:hidden; }
+        .profile-dropdown.active{ display:block; }
+        .dropdown-item{ padding:12px 20px; cursor:pointer; border:none; width:100%; text-align:left; background:white; }
+        .dropdown-item:hover{ background:#f4f7f4; }
+        .dropdown-divider{ height:1px; background:#e0e0e0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>🌱 Smart Crop Advisory</h2>
+    <div id="profileGroup" style="display:none; align-items:center; gap:15px;">
+        <span id="welcomeMsg"></span>
+        <div class="profile-container">
+            <button class="profile-btn" onclick="toggleProfileMenu()">👤</button>
+            <div class="profile-dropdown" id="profileDropdown">
+                <button class="dropdown-item" onclick="location.href='profile.html'">👁️ View Profile</button>
+                <button class="dropdown-item" onclick="alert('Settings coming soon')">⚙️ Settings</button>
+                <button class="dropdown-item" onclick="alert('Help coming soon')">💬 Help</button>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item" onclick="logout()" style="color:red;">🚪 Logout</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="page">
+    <section class="hero">
+        <div>
+            <h1>Smart Crop Advisory System</h1>
+            <p>AI-powered solutions for modern farming</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>Smart Farming Services</h2>
+        <div class="grid">
+            <div class="card" onclick="go('cropadvisory')"><img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6"><p>Crop Advisory</p></div>
+            <div class="card" onclick="go('soilhealth')"><img src="https://images.unsplash.com/photo-1598514983318-2f64f8f4796c"><p>Soil Health</p></div>
+            <div class="card" onclick="go('weather')"><img src="https://images.unsplash.com/photo-1501630834273-4b5604d2ee31"><p>Weather</p></div>
+            <div class="card" onclick="go('seeds')"><img src="https://images.unsplash.com/photo-1605000797499-95a51c5269ae"><p>Seeds</p></div>
+        </div>
+    </section>
+</div>
+
+<div class="message" id="message">🔒 Please login first</div>
+
+<script>
+    const isLoggedIn = sessionStorage.getItem("loggedIn") === "true";
+
+    if (!isLoggedIn) {
+        location.href = "login.html";
+    } else {
+        document.getElementById("profileGroup").style.display = "flex";
+        document.getElementById("welcomeMsg").innerText =
+            "Hi, " + sessionStorage.getItem("userName");
+    }
+
+    function toggleProfileMenu() {
+        document.getElementById("profileDropdown").classList.toggle("active");
+    }
+
+    function logout() {
+        sessionStorage.clear();
+        location.href = "index.html";
+    }
+
+    function go(page) {
+        if (!isLoggedIn) {
+            const msg = document.getElementById("message");
+            msg.style.display = "block";
+            setTimeout(() => msg.style.display = "none", 2000);
+            return;
+        }
+        location.href = page + ".html";
+    }
+
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".profile-container")) {
+            document.getElementById("profileDropdown").classList.remove("active");
+        }
+    });
+</script>
+
+</body>
+</html>

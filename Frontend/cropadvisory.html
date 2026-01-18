@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Crop Disease Detection</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f4;
+    }
+    .container {
+      max-width: 800px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.15);
+      text-align: center;
+    }
+    h2 {
+      color: #2e7d32;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #43a047;
+    }
+    img {
+      max-width: 100%;
+      margin-top: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+    .result {
+      background: #e8f5e9;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>🌱 AI Crop Disease Detection</h2>
+
+  <!-- FILE INPUT -->
+  <input type="file" id="cropImage" accept="image/*">
+
+  <!-- IMAGE PREVIEW -->
+  <img id="previewImage" alt="Leaf Preview">
+
+  <!-- IMPORTANT: type="button" prevents refresh -->
+  <button type="button" id="analyzeBtn">Analyze Leaf</button>
+
+  <!-- RESULT BOX -->
+  <div class="result" id="resultBox"></div>
+</div>
+
+<script>
+  const fileInput = document.getElementById("cropImage");
+  const previewImage = document.getElementById("previewImage");
+  const resultBox = document.getElementById("resultBox");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+
+  /* SHOW IMAGE PREVIEW */
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      previewImage.src = reader.result;
+      previewImage.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+
+    resultBox.innerHTML = "";
+  });
+
+  /* SEND IMAGE TO BACKEND */
+  analyzeBtn.addEventListener("click", async (e) => {
+    e.preventDefault(); // 🔥 EXTRA SAFETY
+
+    if (!fileInput.files.length) {
+      alert("Please upload a leaf image");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("cropImage", fileInput.files[0]);
+
+    resultBox.innerHTML = "⏳ Analyzing leaf using AI...";
+
+    try {
+      const response = await fetch("http://localhost:5000/detect-disease", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        resultBox.innerHTML = "❌ Server error";
+        return;
+      }
+
+      const data = await response.json();
+      console.log("Backend response:", data);
+
+      resultBox.innerHTML = `
+        <h3>🧠 AI Analysis Result</h3>
+        <p><b>Status:</b> ${data.disease}</p>
+        ${data.confidence ? `<p><b>🎯 Confidence:</b> ${data.confidence}</p>` : ""}
+        ${data.message ? `<p><b>ℹ️ Message:</b> ${data.message}</p>` : ""}
+        ${data.medicine ? `<p><b>💊 Medicine:</b> ${data.medicine}</p>` : ""}
+        ${data.solution ? `<p><b>📋 Solution:</b> ${data.solution}</p>` : ""}
+      `;
+
+    } catch (error) {
+      console.error(error);
+      resultBox.innerHTML = "❌ Cannot connect to backend server";
+    }
+  });
+</script>
+
+</body>
+</html>
