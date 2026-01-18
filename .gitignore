@@ -1,0 +1,76 @@
+# -----------------------------
+# Node.js
+# -----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------
+# Environment variables
+# -----------------------------
+.env
+.env.*
+!.env.example
+
+# -----------------------------
+# Python
+# -----------------------------
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# -----------------------------
+# Virtual environment (Windows)
+# -----------------------------
+Scripts/
+Lib/
+Include/
+
+# -----------------------------
+# Python build / distribution
+# -----------------------------
+build/
+dist/
+*.egg-info/
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/
+*.log
+
+# -----------------------------
+# Uploads / runtime generated files
+# -----------------------------
+uploads/
+*.jpg
+*.png
+*.jpeg
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+
+# -----------------------------
+# Model files (optional - recommended)
+# -----------------------------
+*.pth
+*.pt
