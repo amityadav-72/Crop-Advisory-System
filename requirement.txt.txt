@@ -1,0 +1,7 @@
+torch
+torchvision
+torchaudio
+pillow
+numpy
+matplotlib
+google-generativeai
