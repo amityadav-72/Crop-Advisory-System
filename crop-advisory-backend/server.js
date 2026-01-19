@@ -3,7 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const { spawn } = require("child_process");
+const fs = require("fs");
+const axios = require("axios");
 require("dotenv").config();
 
 const app = express();
@@ -32,108 +33,97 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/* ---------- MODELS ---------- */
-const Disease = require("./models/Disease");
-
-/* ---------- ROUTES ---------- */
+/* ---------- ROOT ---------- */
 app.get("/", (req, res) => {
-  res.send("🌱 Crop Advisory Backend Running");
+  res.send("🌱 Crop Advisory Backend Running (Plant.id API v2)");
 });
 
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/soil", require("./routes/soilGeminiRoute"));
-
-/* ---------- AI DISEASE DETECTION ---------- */
-app.post("/detect-disease", upload.single("cropImage"), (req, res) => {
+/* ---------- 🌿 PLANT.ID HEALTH API (NO LOCAL ML) ---------- */
+app.post("/detect-disease", upload.single("cropImage"), async (req, res) => {
   console.log("📥 /detect-disease HIT");
 
   if (!req.file) {
     return res.status(400).json({ message: "No image uploaded" });
   }
 
-  console.log("✅ Image saved at:", req.file.path);
+  try {
+    // Convert image to base64
+    const imageBase64 = fs.readFileSync(req.file.path, {
+      encoding: "base64",
+    });
 
-  const python = spawn("python", ["ai/predict.py", req.file.path]);
-  let output = "";
-
-  python.stdout.on("data", (data) => {
-    output += data.toString();
-  });
-
-  python.stderr.on("data", (data) => {
-    console.error("🐍 Python Error:", data.toString());
-  });
-
-  python.on("close", async () => {
-    if (!output) {
-      return res.status(500).json({ message: "AI model returned no output" });
-    }
-
-    const predictedRaw = output.trim();
-    console.log("🧠 Raw Prediction:", predictedRaw);
-
-    // ---------------- NORMALIZE AI OUTPUT ----------------
-    const [rawCrop, rawDisease] = predictedRaw.split("___");
-
-    const cropType = rawCrop
-      .replace(/_/g, " ")
-      .replace(/\(.*?\)/g, "")
-      .trim();
-
-    const diseaseName = rawDisease
-      .replace(/_/g, " ")
-      .trim();
-
-    console.log("🌾 Crop:", cropType);
-    console.log("🦠 Disease:", diseaseName);
-
-    /* 🌱 HEALTHY CASE */
-    if (rawDisease.toLowerCase().includes("healthy")) {
-      return res.json({
-        disease: `${cropType} - Healthy 🌱`,
-        message: "Your crop is healthy. No treatment required.",
-      });
-    }
-
-    try {
-      // 🔎 FLEXIBLE DATABASE SEARCH
-      const disease = await Disease.findOne({
-        diseaseName: { $regex: diseaseName, $options: "i" },
-        cropType: { $regex: cropType, $options: "i" },
-      });
-
-      if (disease) {
-        return res.json({
-          disease: `${cropType} - ${diseaseName}`,
-          medicine: disease.medicineName,
-          solution: disease.instructions,
-          cropType: disease.cropType,
-        });
+    // Call Plant.id API v2
+    const response = await axios.post(
+      "https://api.plant.id/v2/health_assessment",
+      {
+        images: [imageBase64],
+        health: "only",
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Api-Key": process.env.PLANT_HEALTH_API_KEY,
+        },
+        timeout: 20000,
       }
+    );
 
-      // fallback if crop-specific entry not found
-      const fallback = await Disease.findOne({
-        diseaseName: { $regex: diseaseName, $options: "i" },
-      });
+    // Delete uploaded image
+    fs.unlinkSync(req.file.path);
 
-      if (fallback) {
-        return res.json({
-          disease: `${cropType} - ${diseaseName}`,
-          medicine: fallback.medicineName,
-          solution: fallback.instructions,
-          cropType: fallback.cropType,
-        });
-      }
+    const assessment = response.data.health_assessment;
 
+    // 🌱 HEALTHY CASE
+    if (assessment.is_healthy) {
       return res.json({
-        disease: `${cropType} - ${diseaseName}`,
-        message: "Disease not found in database",
+        disease: "Healthy 🌱",
+        confidence: (assessment.is_healthy_probability * 100).toFixed(2),
+        message: "Your crop is healthy. No disease detected.",
       });
-    } catch (err) {
-      console.error("❌ Database Error:", err);
-      return res.status(500).json({ message: "Database error" });
     }
-  });
+
+    // 🦠 BIOTIC DISEASE
+    let diseaseName = "No specific disease detected";
+    let diseaseConfidence = null;
+
+    if (assessment.diseases && assessment.diseases.length > 0) {
+      diseaseName = assessment.diseases[0].name;
+      diseaseConfidence = (
+        assessment.diseases[0].probability * 100
+      ).toFixed(2);
+    }
+
+    // 💧 ABIOTIC STRESS (water, nutrients, etc.)
+    let abioticIssue = null;
+    let abioticConfidence = null;
+
+    if (
+      assessment.abiotic_stresses &&
+      assessment.abiotic_stresses.length > 0
+    ) {
+      abioticIssue = assessment.abiotic_stresses[0].name;
+      abioticConfidence = (
+        assessment.abiotic_stresses[0].probability * 100
+      ).toFixed(2);
+    }
+
+    // ✅ FINAL RESPONSE
+    return res.json({
+      disease: diseaseName,
+      diseaseConfidence: diseaseConfidence,
+      abioticIssue: abioticIssue,
+      abioticConfidence: abioticConfidence,
+      message: "Analysis completed using Plant.id Health API",
+    });
+
+  } catch (error) {
+    console.error("❌ Plant.id API Error:");
+    console.error(error.response?.data || error.message);
+
+    return res.status(500).json({
+      message: "Plant.id Health API request failed",
+    });
+  }
 });
 
 /* ---------- SERVER ---------- */
