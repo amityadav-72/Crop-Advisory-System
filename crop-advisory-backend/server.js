@@ -113,7 +113,7 @@ app.post("/detect-disease", upload.single("cropImage"), async (req, res) => {
       diseaseConfidence: diseaseConfidence,
       abioticIssue: abioticIssue,
       abioticConfidence: abioticConfidence,
-      message: "Analysis completed using Plant.id Health API",
+      message: "Analysis completed",
     });
 
   } catch (error) {
